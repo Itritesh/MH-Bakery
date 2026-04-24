@@ -213,8 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toggleMenu = (open) => {
         if (mobileMenu && backdrop) {
-            mobileMenu.classList.toggle('open', open);
-            backdrop.classList.toggle('visible', open);
+            mobileMenu.classList.toggle('hidden', !open);
+            backdrop.classList.toggle('hidden', !open);
+            menuBtn?.setAttribute('aria-expanded', open ? 'true' : 'false');
             document.body.style.overflow = open ? 'hidden' : '';
         }
     };
