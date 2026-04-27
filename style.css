@@ -221,4 +221,17 @@ header.scrolled {
   font-size: clamp(2.2rem, 8vw, 6rem) !important;
 }
 
+/* Missing utility classes to fix layout glitches */
+.appearance-none {
+  -webkit-appearance: none;
+  appearance: none;
+}
 
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+
+.inset-y-0 {
+  top: 0;
+  bottom: 0;
+}

@@ -18,6 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
         cartLinks.forEach(link => {
             link.setAttribute('aria-label', `Cart with ${totalItems} items`);
         });
+
+        // Update mobile menu "View Cart (X)" buttons
+        const mobileCartBtns = document.querySelectorAll('.mobile-menu a[href="checkout.html"]');
+        mobileCartBtns.forEach(btn => {
+            if (btn.textContent.includes('View Cart')) {
+                const svg = btn.querySelector('svg');
+                if (svg) {
+                    btn.innerHTML = '';
+                    btn.appendChild(svg);
+                    btn.appendChild(document.createTextNode(`View Cart (${totalItems})`));
+                }
+            }
+        });
+
         localStorage.setItem('maharashtra_bakery_cart', JSON.stringify(cart));
     };
 
