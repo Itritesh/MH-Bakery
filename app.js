@@ -32,6 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCartCountUI();
     };
 
+    const buyNow = (product) => {
+        // Redirect to product detail page with product ID
+        window.location.href = `product-detail.html?product=${product.id}`;
+    };
+
     const updateCartItem = (productId, newQuantity) => {
         const item = cart.find(item => item.id === productId);
         if (item) {
@@ -273,34 +278,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const isDecrease = btn.getAttribute('aria-label')?.startsWith('Decrease');
         const isIncrease = btn.getAttribute('aria-label')?.startsWith('Increase');
 
-        if (isDecrease && productId) {
+        if (isDecrease) {
             const span = btn.nextElementSibling;
             if (span) {
                 const currentQty = parseInt(span.textContent, 10);
                 if (currentQty > 1) {
                     span.textContent = currentQty - 1;
-                    updateCartItem(productId, currentQty - 1);
+                    if (productId) updateCartItem(productId, currentQty - 1);
                 }
             }
-        } else if (isIncrease && productId) {
+        } else if (isIncrease) {
             const span = btn.previousElementSibling;
             if (span) {
                 const currentQty = parseInt(span.textContent, 10);
                 span.textContent = currentQty + 1;
-                updateCartItem(productId, currentQty + 1);
+                if (productId) updateCartItem(productId, currentQty + 1);
             }
         }
     });
 
-    // Add to Cart
+    // Add to Cart and Buy Now
     document.addEventListener('click', (e) => {
-        const btn = e.target.closest('button');
+        const btn = e.target.closest('button, a');
         if (!btn) return;
 
         const text = btn.textContent.trim().toLowerCase();
         const isAddBtn = text === 'add' || text.includes('add to cart') || btn.getAttribute('aria-label')?.includes('Add');
+        const isBuyNowBtn = text.includes('buy now');
 
-        if (isAddBtn) {
+        if (isAddBtn || isBuyNowBtn) {
             e.preventDefault();
 
             // Get product details from the card
@@ -315,8 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Extract product info from DOM
                 const img = card.querySelector('img');
-                const nameEl = card.querySelector('h2, h3');
-                const priceEl = card.querySelector('p.font-bold');
+                const nameEl = card.querySelector('h2, h3, h1');
+                const priceEl = card.querySelector('p.font-bold, .text-3xl.font-bold');
                 const weightEl = card.querySelector('p.text-xs, p.text-sm');
 
                 if (!nameEl || !priceEl) return;
@@ -329,32 +335,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Generate unique ID based on name
                 const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-                let qtyToAdd = 1;
-                if (text.includes('add to cart')) {
-                    const qtySpan = document.querySelector('.w-12.h-11.flex.items-center.justify-center');
-                    if (qtySpan) qtyToAdd = parseInt(qtySpan.textContent, 10) || 1;
-                }
-
                 product = {
                     id,
                     name,
                     price,
-                    quantity: qtyToAdd,
+                    quantity: 1, // Will be updated below
                     image,
                     weight
                 };
             }
 
-            addToCart(product);
+            // Always update quantity based on the UI
+            let qtyToAdd = 1;
+            if (text.includes('add to cart')) {
+                const qtySpan = document.querySelector('.w-12.h-11.flex.items-center.justify-center');
+                if (qtySpan) qtyToAdd = parseInt(qtySpan.textContent, 10) || 1;
+            }
+            product.quantity = qtyToAdd;
 
-            // Visual feedback
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = 'Added!';
-            btn.classList.add('bg-success');
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.classList.remove('bg-success');
-            }, 1500);
+            if (isBuyNowBtn) {
+                // For Buy Now on collections page, redirect to detail.
+                // For Buy Now on detail page (which says Instant Checkout), add to cart and go to checkout.
+                if (text.includes('checkout')) {
+                    addToCart(product);
+                    window.location.href = 'checkout.html';
+                } else {
+                    buyNow(product);
+                }
+            } else {
+                addToCart(product);
+
+                // Visual feedback
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = 'Added!';
+                btn.classList.add('bg-success');
+                setTimeout(() => {
+                    window.location.href = 'collections.html';
+                }, 500);
+            }
         }
     });
 
@@ -415,6 +433,120 @@ document.addEventListener('DOMContentLoaded', () => {
         continueShoppingBtn.addEventListener('click', () => {
             window.location.href = 'index.html';
         });
+    }
+
+    // Product Detail Page Dynamic Loading
+    if (window.location.pathname.includes('product-detail.html')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('product');
+
+        if (productId) {
+            // Product data mapping
+            const products = {
+                'almond-fingers': {
+                    name: 'Almond Fingers',
+                    price: 395,
+                    weight: '250g',
+                    image: 'assets/images/DSC02867.jpg',
+                    gallery: ['assets/images/DSC02867.jpg', 'assets/images/DSC02868.jpg', 'assets/images/DSC02869.jpg'],
+                    description: 'Buttery, crumbly shortbread loaded with roasted almond flakes from Maharashtra Bakery in Maharashtra, India. India\'s bestselling cookie.',
+                    category: 'Classic Cookies'
+                },
+                'choco-chip-delight': {
+                    name: 'Choco Chip Delight',
+                    price: 349,
+                    weight: '250g',
+                    image: 'assets/images/DSC02868.jpg',
+                    gallery: ['assets/images/DSC02868.jpg', 'assets/images/DSC02867.jpg', 'assets/images/DSC02870.jpg'],
+                    description: 'Rich chocolate chip cookies with premium Belgian chocolate chunks and a perfect chewy texture.',
+                    category: 'Gourmet Cookies'
+                },
+                'assorted-gift-tin': {
+                    name: 'Assorted Gift Tin',
+                    price: 895,
+                    weight: '500g',
+                    image: 'assets/images/DSC02869.jpg',
+                    gallery: ['assets/images/DSC02869.jpg', 'assets/images/DSC02867.jpg', 'assets/images/DSC02868.jpg'],
+                    description: 'A perfect assortment of our finest cookies in an elegant gift tin, ideal for special occasions.',
+                    category: 'Gift Tins'
+                },
+                'double-chocolate-melt': {
+                    name: 'Double Chocolate Melt',
+                    price: 425,
+                    weight: '250g',
+                    image: 'assets/images/DSC02870.jpg',
+                    gallery: ['assets/images/DSC02870.jpg', 'assets/images/DSC02868.jpg', 'assets/images/DSC02869.jpg'],
+                    description: 'Decadent double chocolate cookies that literally melt in your mouth with rich cocoa flavor.',
+                    category: 'Indulgence'
+                },
+                'millet-jaggery-cookies': {
+                    name: 'Millet Jaggery Cookies',
+                    price: 295,
+                    weight: '250g',
+                    image: 'assets/images/DSC02871.jpg',
+                    gallery: ['assets/images/DSC02871.jpg', 'assets/images/DSC02870.jpg', 'assets/images/DSC02872.jpg'],
+                    description: 'Healthy and nutritious cookies made with millet flour and natural jaggery sweetener.',
+                    category: 'Health First'
+                },
+                'oatmeal-raisin': {
+                    name: 'Oatmeal & Raisin',
+                    price: 350,
+                    weight: '250g',
+                    image: 'assets/images/DSC02872.jpg',
+                    gallery: ['assets/images/DSC02872.jpg', 'assets/images/DSC02871.jpg', 'assets/images/DSC02867.jpg'],
+                    description: 'Classic oatmeal cookies with plump raisins and a wholesome texture, naturally sugar-free.',
+                    category: 'Sugar Free'
+                }
+            };
+
+            const product = products[productId];
+            if (product) {
+                // Update page title
+                document.title = `${product.name} ${product.weight} — Maharashtra Bakery`;
+
+                // Update main product title
+                const titleElement = document.querySelector('h1 span');
+                if (titleElement) titleElement.textContent = `${product.name} ${product.weight}`;
+
+                // Update price
+                const priceElement = document.querySelector('.text-4xl.font-bold');
+                if (priceElement) priceElement.textContent = `₹${product.price}`;
+
+                // Update category
+                const categoryElement = document.querySelector('.text-\\[10px\\].font-bold.uppercase.tracking-widest');
+                if (categoryElement) categoryElement.textContent = product.category.toUpperCase();
+
+                // Update main image
+                const mainImage = document.querySelector('.product-img-wrap img');
+                if (mainImage) mainImage.src = product.image;
+
+                // Update gallery thumbnails
+                const thumbs = document.querySelectorAll('.thumb-item img');
+                thumbs.forEach((thumb, index) => {
+                    if (product.gallery[index]) {
+                        thumb.src = product.gallery[index];
+                    }
+                });
+
+                // Update meta description
+                const metaDesc = document.querySelector('meta[name="description"]');
+                if (metaDesc) metaDesc.content = product.description;
+
+                // Update product data attribute for cart functionality
+                const productContainer = document.querySelector('[data-product]');
+                if (productContainer) {
+                    const productData = {
+                        id: productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        image: product.image,
+                        weight: product.weight
+                    };
+                    productContainer.setAttribute('data-product', JSON.stringify(productData));
+                }
+            }
+        }
     }
 
     // Initial UI Sync
